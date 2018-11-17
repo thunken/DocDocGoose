@@ -1,0 +1,44 @@
+{
+    "name": "thunken/doc-doc-goose",
+    "description": "A laravel REST API doc generator",
+    "keywords": ["laravel", "api", "documentation"],
+    "license": "MIT",
+    "homepage": "https://github.com/thunken/doc-doc-goose",
+    "support": {
+        "issues": "https://github.com/thunken/doc-doc-goose/issues",
+        "source": "https://github.com/thunken/doc-doc-goose"
+    },
+    "authors": [
+        {
+            "name": "Damien Vannson",
+            "email": "damien@thunken.com"
+        }
+    ],
+    "require": {
+        "illuminate/support": "~5.5.0|~5.6.0|~5.7.0",
+        "mpociot/laravel-apidoc-generator": "dev-master"
+    },
+    "require-dev": {
+        "phpunit/phpcov": "~3.0|~4.0",
+        "phpunit/phpunit": "~5.7.14|~6.1|~7.0",
+        "laravel/framework": "~5.5.0|~5.6.0|~5.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Thunken\\DocDocGoose\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Thunken\\DocDocGoose\\Tests\\": "tests/"
+      }
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Thunken\\DocDocGoose\\DocDocGooseProvider"
+            ]
+        }
+    }
+}
