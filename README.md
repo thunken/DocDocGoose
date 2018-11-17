@@ -47,7 +47,7 @@ As simple as injecting
 ```
 and / or
 ```php
-{!! \Extractor::renderMenu()  !!}
+{!! \Extractor::renderContent()  !!}
 ```
 in your templates.
 
