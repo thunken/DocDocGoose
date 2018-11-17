@@ -66,10 +66,8 @@ $docsAsGroups = $extractor->toRaw(); // returns a Group Collection
 
 # @TODOs
 - Goals description
-- Documentation
-- Documentation
-- Documentation
-- Documentation (ironicaly)
+- More documentation
+- Handle api versions
 
-# References
+# References and thanks
 * Widely and wisely using https://github.com/mpociot/laravel-apidoc-generator library (Thanks)
