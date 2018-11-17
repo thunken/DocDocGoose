@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Thunken\DocDocGoose\Extracts\DocLine;
 use Thunken\DocDocGoose\Extracts\Group;
+use Thunken\DocDocGoose\Extracts\Version;
 
 class Extractor
 {
@@ -14,8 +15,8 @@ class Extractor
     /** @var array $config */
     private $config = [];
 
-    /** @var Collection $groups */
-    private $groups;
+    /** @var Collection $versions */
+    private $versions;
 
     /**
      * Extractor constructor.
@@ -25,7 +26,7 @@ class Extractor
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->groups = new Collection();
+        $this->versions = new Collection();
     }
 
     /**
@@ -35,33 +36,30 @@ class Extractor
      */
     public function extract()
     {
-        /** @var Route $route */
-        foreach(\Route::getRoutes() as $route) {
-            // @TODO Manage api version by adding one more array level
-            if ($route->named($this->toBeExtracted())) {
-                $generator = new Generator();
-                $rules = $this->getRules();
-                $doc = $generator->processRoute($route, $rules);
-                $groupId = md5($doc['group']);
-                $groupPath = sprintf('%s', Str::slug($doc['group']));
+        // Already extracted, aborting
+        if ($this->versions->count() > 0) {
+            return $this;
+        }
 
-                $group = $this->groups->filter(function($item) use ($groupId) {
-                    return ($item->getId() == $groupId);
-                })->first();
+        $versionsToBeExtracted = $this->toBeExtracted();
+        foreach ($versionsToBeExtracted as $versionName => $routeToBeExtracted) {
+            $version = $this->getVersion($versionName);
 
-                if (!($group instanceof Group)) {
-                    $group = new Group();
-                    $group->setName($doc['group']);
-                    $group->setId($groupId);
-                    $group->setPath($groupPath);
-                    $this->groups->push($group);
+            foreach(\Route::getRoutes() as $route) {
+                if (!$route->named($version->getPatterns())) {
+                    continue;
                 }
 
-                $docPath = Str::slug(str_replace('/', '-', $doc['uri']));
-                $doc['path'] = sprintf('%s-%s', $groupPath, $docPath);
+                $generator = new Generator();
+                $rules = $version->getRules();
+                $doc = $generator->processRoute($route, $rules);
+                $group = $this->getGroup($version, $doc);
 
+                $docPath = Str::slug(str_replace('/', '-', $doc['uri']));
+                $doc['path'] = sprintf('%s-%s', $group->getPath(), $docPath);
                 $group->push(new DocLine($doc));
             }
+
         }
 
         return $this;
@@ -72,7 +70,7 @@ class Extractor
      */
     public function toRaw()
     {
-        return $this->groups;
+        return $this->versions;
     }
 
     /**
@@ -82,7 +80,7 @@ class Extractor
      */
     public function toArray()
     {
-        return $this->groups->toArray();
+        return $this->versions->toArray();
     }
 
     /**
@@ -95,7 +93,7 @@ class Extractor
         $this->extract();
         return view(
             'docdocgoose::html.menu',
-            [ 'groups' => $this->groups ]
+            [ 'versions' => $this->versions ]
         );
     }
 
@@ -109,8 +107,57 @@ class Extractor
         $this->extract();
         return view(
             'docdocgoose::html.content',
-            [ 'groups' => $this->groups ]
+            [ 'versions' => $this->versions ]
         );
+    }
+
+    /**
+     * @param $versionName
+     * @return Version
+     */
+    private function getVersion($versionName)
+    {
+        $version = $this->versions->filter(function($item) use ($versionName) {
+            return ($item->getId() == $versionName);
+        })->first();
+
+        if (!($version instanceof Version)) {
+            $version = new Version();
+            $version->setName($versionName);
+            $version->setId($versionName);
+            $version->setPath($versionName);
+            $version->setPatterns($this->getVersionPatterns($versionName));
+            $version->setRules($this->getVersionRules($versionName));
+            $this->versions->push($version);
+        }
+
+        return $version;
+    }
+
+    private function getGroup(Version $version, $doc)
+    {
+        $groupId = md5($doc['group']);
+
+        $group = $version->filter(function($item) use ($groupId) {
+            return ($item->getId() == $groupId);
+        })->first();
+
+        if (!($group instanceof Group)) {
+            $groupPath = sprintf(
+                '%s-%s',
+                $version->getName(),
+                Str::slug($doc['group'])
+            );
+
+            $group = new Group();
+            $group->setName($doc['group']);
+            $group->setId($groupId);
+            $group->setPath($groupPath);
+            $group->setVersion($version->getName());
+            $version->push($group);
+        }
+
+        return $group;
     }
 
     /**
@@ -120,17 +167,42 @@ class Extractor
      */
     private function toBeExtracted()
     {
-        return $this->config['routes']['patterns'];
+        return $this->config['routes'];
     }
 
     /**
-     *
-     *
+     * @param $version
      * @return array
+     * @throws \Exception
      */
-    private function getRules()
+    private function getVersionRules($version)
     {
-        return $this->config['rules'];
+        $this->checkVersion($version);
+
+        return $this->config['routes'][$version]['rules'];
+    }
+
+    /**
+     * @param $version
+     * @return mixed
+     * @throws \Exception
+     */
+    private function getVersionPatterns($version)
+    {
+        $this->checkVersion($version);
+
+        return $this->config['routes'][$version]['patterns'];
+    }
+
+    /**
+     * @param $version
+     * @throws \Exception
+     */
+    private function checkVersion($version)
+    {
+        if (!isset($this->config['routes'][$version])) {
+            throw new \Exception('Version not configured.');
+        }
     }
 
 }

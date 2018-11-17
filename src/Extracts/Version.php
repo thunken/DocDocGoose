@@ -4,7 +4,7 @@ namespace Thunken\DocDocGoose\Extracts;
 
 use Illuminate\Support\Collection;
 
-class Group extends Collection
+class Version extends Collection
 {
 
     /** @var string $id */
@@ -16,8 +16,11 @@ class Group extends Collection
     /** @var string $name */
     public $name = '';
 
-    /** @var string $name */
-    public $version = '';
+    /** @var array $patterns */
+    private $patterns = [];
+
+    /** @var array $rules */
+    private $rules = [];
 
     /**
      * @param string $id
@@ -77,22 +80,41 @@ class Group extends Collection
     }
 
     /**
-     * @param string $version
+     * @param array $patterns
      * @return $this
      */
-    public function setVersion($version)
+    public function setPatterns(array $patterns)
     {
-        $this->version = $version;
+        $this->patterns = $patterns;
 
         return $this;
     }
 
     /**
-     * @return string
+     * @return array
      */
-    public function getVersion()
+    public function getPatterns()
     {
-        return $this->version;
+        return $this->patterns;
+    }
+
+    /**
+     * @param array $rules
+     * @return $this
+     */
+    public function setRules(array $rules)
+    {
+        $this->rules = $rules;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getRules()
+    {
+        return $this->rules;
     }
 
 }

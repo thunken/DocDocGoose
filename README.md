@@ -1,3 +1,5 @@
+Generates a clean HTML'd API documentation. Based on your routes declarations and filtered patterns.
+
 # Install
 
 ```bash

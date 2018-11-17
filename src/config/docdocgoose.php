@@ -2,11 +2,13 @@
 
 return [
     'routes' => [
-        'patterns' => [ 'api.*' ],
-    ],
-    'rules' => [
-        'headers' => [
-            'Authorization' => '<Your API Key>'
+        'v1' => [
+            'patterns' => [ 'api.v1.*' ],
+            'rules' => [
+                'headers' => [
+                    'Authorization' => '<Your API Key>'
+                ]
+            ]
         ]
     ]
 ];
