@@ -18,18 +18,31 @@ php artisan vendor:publish --provider="Thunken\DocDocGoose\DocDocGooseProvider"
 ```
 
 ## Config changes
+
 ```php
 return [
     'routes' => [
-        'patterns' => [ 'api.*' ],
-    ],
-    'rules' => [
-        'headers' => [
-            'Authorization' => '<Your API Key>'
+        'v1' => [
+            'patterns' => [ 'api.v1.*' ],
+            'rules' => [
+                'headers' => [
+                    'Authorization' => '<Your API Key>'
+                ]
+            ]
         ]
+    ],
+    'cache' => [
+        'enabled' => true,
+        'store' => 'file'
     ]
 ];
 ```
+
+Here you can manage versions, headers by version and caching feature.  
+Cache is enable by default and using the file store, you can disable it by putting 'enable' to false.  
+
+File cache is the best cache method if your cache files are not persisted across deployment. It's a good way to ensure your documentation is up to date with the current version of your API code at each deployment.
+You can reproduce this behavior by resetting the _Extractor::cacheName_ key in your choosen cache store.  
 
 ## Facade 
 
@@ -68,7 +81,9 @@ $docsAsGroups = $extractor->toRaw(); // returns a Group Collection
 
 # @TODOs
 - Goals description
-- More documentation
+- Tests
+- Tests
+- And Tests
 
 # References and thanks
 * Widely and wisely using https://github.com/mpociot/laravel-apidoc-generator library (Thanks)

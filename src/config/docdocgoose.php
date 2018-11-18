@@ -10,5 +10,9 @@ return [
                 ]
             ]
         ]
+    ],
+    'cache' => [
+        'enabled' => true,
+        'store' => 'file'
     ]
 ];

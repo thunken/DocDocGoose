@@ -18,6 +18,8 @@ class Extractor
     /** @var Collection $versions */
     private $versions;
 
+    CONST cacheName = 'docdocgoose_versions';
+
     /**
      * Extractor constructor.
      *
@@ -26,13 +28,14 @@ class Extractor
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->versions = new Collection();
+        $this->versions = $this->getCachedVersions();
     }
 
     /**
      * Extract and store all route groups that match configure route patterns
      *
      * @return Extractor
+     * @throws \Exception
      */
     public function extract()
     {
@@ -44,23 +47,10 @@ class Extractor
         $versionsToBeExtracted = $this->toBeExtracted();
         foreach ($versionsToBeExtracted as $versionName => $routeToBeExtracted) {
             $version = $this->getVersion($versionName);
-
-            foreach(\Route::getRoutes() as $route) {
-                if (!$route->named($version->getPatterns())) {
-                    continue;
-                }
-
-                $generator = new Generator();
-                $rules = $version->getRules();
-                $doc = $generator->processRoute($route, $rules);
-                $group = $this->getGroup($version, $doc);
-
-                $docPath = Str::slug(str_replace('/', '-', $doc['uri']));
-                $doc['path'] = sprintf('%s-%s', $group->getPath(), $docPath);
-                $group->push(new DocLine($doc));
-            }
-
+            $this->extractGroups($version);
         }
+
+        $this->setVersionsOnCache();
 
         return $this;
     }
@@ -112,8 +102,33 @@ class Extractor
     }
 
     /**
+     * @param Version $version
+     * @return $this
+     */
+    private function extractGroups(Version $version)
+    {
+        foreach(\Route::getRoutes() as $route) {
+            if (!$route->named($version->getPatterns())) {
+                continue;
+            }
+
+            $generator = new Generator();
+            $rules = $version->getRules();
+            $doc = $generator->processRoute($route, $rules);
+            $group = $this->getGroup($version, $doc);
+
+            $docPath = Str::slug(str_replace('/', '-', $doc['uri']));
+            $doc['path'] = sprintf('%s-%s', $group->getPath(), $docPath);
+            $group->push(new DocLine($doc));
+        }
+
+        return $this;
+    }
+
+    /**
      * @param $versionName
      * @return Version
+     * @throws \Exception
      */
     private function getVersion($versionName)
     {
@@ -203,6 +218,65 @@ class Extractor
         if (!isset($this->config['routes'][$version])) {
             throw new \Exception('Version not configured.');
         }
+    }
+
+    private function getCachedVersions()
+    {
+        if (!$this->shouldCache()) {
+            return new Collection();
+        }
+
+        $versions = \Cache::store($this->getCacheStore())->get(self::cacheName);
+        if (null === $versions) {
+            return new Collection();
+        }
+
+        return $versions;
+    }
+
+    private function shouldCache()
+    {
+        if (!isset($this->config['cache'])) {
+            return false;
+        }
+
+        if (!isset($this->config['cache']['enabled'])) {
+            return false;
+        }
+
+        if (true !== $this->config['cache']['enabled']) {
+            return false;
+        }
+
+        if ('' == $this->getCacheStore()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function getCacheStore()
+    {
+        if (
+            !isset($this->config['cache']['store']) ||
+            '' == $this->config['cache']['store']
+        ) {
+            return null;
+        }
+
+        return $this->config['cache']['store'];
+    }
+
+    private function setVersionsOnCache()
+    {
+        if (!$this->shouldCache()) {
+            return $this;
+        }
+
+        \Cache::store($this->getCacheStore())
+            ->forever(self::cacheName, $this->versions);
+
+        return $this;
     }
 
 }
