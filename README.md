@@ -38,7 +38,9 @@ return [
 ];
 ```
 
-Here you can manage versions, headers by version and caching feature.  
+Here you can manage versions, headers by version and caching feature.
+
+## Cache
 Cache is enable by default and using the file store, you can disable it by putting 'enable' to false.  
 
 File cache is the best cache method if your cache files are not persisted across deployment. It's a good way to ensure your documentation is up to date with the current version of your API code at each deployment.
