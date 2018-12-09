@@ -1,6 +1,6 @@
 @foreach($versions as $version)
     <section>
-        <header id="#{{ $version->getPath() }}">
+        <header id="{{ $version->getPath() }}">
             <h1>{{ $version->getName() }}</h1>
         </header>
 
