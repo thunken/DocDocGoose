@@ -9,13 +9,6 @@ use Thunken\DocDocGoose\Tools\Extractor;
 class DocDocGooseProvider extends BaseProvider
 {
 
-    /**
-     * Indicates if loading of the provider is deferred.
-     *
-     * @var bool
-     */
-    protected $defer = false;
-
     public function boot()
     {
         AliasLoader::getInstance([
