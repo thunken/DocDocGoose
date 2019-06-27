@@ -4,6 +4,7 @@ namespace Thunken\DocDocGoose\Tools;
 
 use Faker\Factory;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Str;
 use Mpociot\Reflection\DocBlock\Tag;
 use ReflectionClass;
 
@@ -58,7 +59,7 @@ class Generator extends \Mpociot\ApiDoc\Tools\Generator
                 $type = $this->normalizeParameterType($type);
                 list($description, $value) = $this->parseDescription($description, 'string');
                 if (is_null($value)) {
-                    $value = str_contains($description, ['number', 'count', 'page'])
+                    $value = Str::contains($description, ['number', 'count', 'page'])
                         ? $this->generateDummyValue('integer')
                         : $this->generateDummyValue('string');
                 }
@@ -168,7 +169,7 @@ class Generator extends \Mpociot\ApiDoc\Tools\Generator
                 return $faker->boolean();
             },
             'string' => function () use ($faker) {
-                return str_random();
+                return Str::random();
             },
             'array' => function () {
                 return '[]';
