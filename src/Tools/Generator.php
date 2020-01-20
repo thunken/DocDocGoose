@@ -20,7 +20,6 @@ class Generator extends \Mpociot\ApiDoc\Tools\Generator
         $controller = new ReflectionClass($class);
         $method = $controller->getMethod($method);
 
-        $routeGroup = $this->getRouteGroup($controller, $method);
         $docBlock = $this->parseDocBlock($method);
 
         $parsedRoute['request'] = $this->getRequestFromDocBlock($docBlock['tags']);
