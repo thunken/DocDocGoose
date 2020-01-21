@@ -5,6 +5,8 @@ namespace Thunken\DocDocGoose\Tools;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Mpociot\ApiDoc\Tools\DocumentationConfig;
+use Thunken\DocDocGoose\Extracting\Generator;
 use Thunken\DocDocGoose\Extracts\DocLine;
 use Thunken\DocDocGoose\Extracts\Group;
 use Thunken\DocDocGoose\Extracts\Version;
@@ -112,7 +114,7 @@ class Extractor
                 continue;
             }
 
-            $generator = new Generator();
+            $generator = new Generator(new DocumentationConfig(config('docdocgoose')));
             $rules = $version->getRules();
             $doc = $generator->processRoute($route, $rules);
             $group = $this->getGroup($version, $doc);
@@ -151,7 +153,7 @@ class Extractor
 
     private function getGroup(Version $version, $doc)
     {
-        $groupId = md5($doc['group']);
+        $groupId = md5($doc['metadata']['groupName']);
 
         $group = $version->filter(function($item) use ($groupId) {
             return ($item->getId() == $groupId);
@@ -161,11 +163,11 @@ class Extractor
             $groupPath = sprintf(
                 '%s-%s',
                 $version->getName(),
-                Str::slug($doc['group'])
+                Str::slug($doc['metadata']['groupName'])
             );
 
             $group = new Group();
-            $group->setName($doc['group']);
+            $group->setName($doc['metadata']['groupName']);
             $group->setId($groupId);
             $group->setPath($groupPath);
             $group->setVersion($version->getName());
