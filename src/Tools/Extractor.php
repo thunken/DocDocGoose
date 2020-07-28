@@ -110,7 +110,7 @@ class Extractor
      */
     public function getCacheRepository()
     {
-        return $this->getCacheRepository();
+        return \Cache::store($this->getCacheStore());
     }
 
     /**
