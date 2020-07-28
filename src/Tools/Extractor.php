@@ -2,6 +2,7 @@
 
 namespace Thunken\DocDocGoose\Tools;
 
+use Carbon\Carbon;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ class Extractor
     /** @var array $config */
     private $config = [];
 
-    /** @var Collection $versions */
+    /** @var array $versions */
     private $versions;
 
     CONST cacheName = 'docdocgoose_versions';
@@ -42,10 +43,10 @@ class Extractor
     public function extract()
     {
         // Already extracted, aborting
-        if ($this->versions->count() > 0) {
+        if ($this->getVersions()->count() > 0) {
             return $this;
         }
-
+        
         $versionsToBeExtracted = $this->toBeExtracted();
         foreach ($versionsToBeExtracted as $versionName => $routeToBeExtracted) {
             $version = $this->getVersion($versionName);
@@ -53,7 +54,7 @@ class Extractor
         }
 
         $this->setVersionsOnCache();
-
+        
         return $this;
     }
 
@@ -72,7 +73,7 @@ class Extractor
      */
     public function toArray()
     {
-        return $this->versions->toArray();
+        return $this->getVersions()->toArray();
     }
 
     /**
@@ -85,7 +86,7 @@ class Extractor
         $this->extract();
         return view(
             'docdocgoose::html.menu',
-            [ 'versions' => $this->versions ]
+            [ 'versions' => $this->getVersions() ]
         );
     }
 
@@ -99,18 +100,23 @@ class Extractor
         $this->extract();
         return view(
             'docdocgoose::html.content',
-            [ 'versions' => $this->versions ]
+            [ 'versions' => $this->getVersions() ]
         );
     }
 
     /**
-     * Get the documentation cache repository
+     * Returns versions actual date
      *
-     * @return \Illuminate\Contracts\Cache\Repository
+     * @return \Carbon\Carbon
      */
-    public function getCacheRepository()
+    public function getVersionsDate()
     {
-        return \Cache::store($this->getCacheStore());
+        $versions = $this->getCachedVersions();
+        if (!isset($versions['date'])) {
+            return \Carbon\Carbon::now();
+        }
+
+        return $versions['date'];
     }
 
     /**
@@ -138,13 +144,28 @@ class Extractor
     }
 
     /**
+     * Returns actual cached versions
+     *
+     * @return Collection
+     */
+    private function getVersions()
+    {
+        $versions = $this->getCachedVersions();
+        if (!isset($versions['versions'])) {
+            return new Collection();
+        }
+
+        return $versions['versions'];
+    }
+
+    /**
      * @param $versionName
      * @return Version
      * @throws \Exception
      */
     private function getVersion($versionName)
     {
-        $version = $this->versions->filter(function($item) use ($versionName) {
+        $version = $this->getVersions()->filter(function($item) use ($versionName) {
             return ($item->getId() == $versionName);
         })->first();
 
@@ -155,7 +176,7 @@ class Extractor
             $version->setPath($versionName);
             $version->setPatterns($this->getVersionPatterns($versionName));
             $version->setRules($this->getVersionRules($versionName));
-            $this->versions->push($version);
+            $this->getVersions()->push($version);
         }
 
         return $version;
@@ -205,7 +226,6 @@ class Extractor
     private function getVersionRules($version)
     {
         $this->checkVersion($version);
-
         return $this->config['routes'][$version]['rules'];
     }
 
@@ -246,6 +266,11 @@ class Extractor
         return $versions;
     }
 
+    /**
+     * Should we cache content
+     *
+     * @return boolean
+     */
     private function shouldCache()
     {
         if (!isset($this->config['cache'])) {
@@ -279,6 +304,16 @@ class Extractor
         return $this->config['cache']['store'];
     }
 
+    /**
+     * Get the documentation cache repository
+     *
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    private function getCacheRepository()
+    {
+        return \Cache::store($this->getCacheStore());
+    }
+
     private function setVersionsOnCache()
     {
         if (!$this->shouldCache()) {
@@ -286,7 +321,7 @@ class Extractor
         }
 
         $this->getCacheRepository()
-            ->forever(self::cacheName, $this->versions);
+            ->forever(self::cacheName, [ 'date' => \Carbon\Carbon::now(), 'versions' => $this->getVersions() ]);
 
         return $this;
     }
