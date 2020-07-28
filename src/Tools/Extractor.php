@@ -104,6 +104,16 @@ class Extractor
     }
 
     /**
+     * Get the documentation cache repository
+     *
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    public function getCacheRepository()
+    {
+        return $this->getCacheRepository();
+    }
+
+    /**
      * @param Version $version
      * @return $this
      */
@@ -228,7 +238,7 @@ class Extractor
             return new Collection();
         }
 
-        $versions = \Cache::store($this->getCacheStore())->get(self::cacheName);
+        $versions = $this->getCacheRepository()->get(self::cacheName);
         if (null === $versions) {
             return new Collection();
         }
@@ -275,7 +285,7 @@ class Extractor
             return $this;
         }
 
-        \Cache::store($this->getCacheStore())
+        $this->getCacheRepository()
             ->forever(self::cacheName, $this->versions);
 
         return $this;
