@@ -21,6 +21,9 @@ class Extractor
     /** @var array $versions */
     private $versions;
 
+    /** @var Carbon $date */
+    private $date;
+
     CONST cacheName = 'docdocgoose_versions';
 
     /**
@@ -32,6 +35,7 @@ class Extractor
     {
         $this->config = $config;
         $this->versions = $this->getCachedVersions();
+        $this->date = Carbon::now();
     }
 
     /**
@@ -46,7 +50,7 @@ class Extractor
         if ($this->getVersions()->count() > 0) {
             return $this;
         }
-        
+
         $versionsToBeExtracted = $this->toBeExtracted();
         foreach ($versionsToBeExtracted as $versionName => $routeToBeExtracted) {
             $version = $this->getVersion($versionName);
@@ -54,7 +58,7 @@ class Extractor
         }
 
         $this->setVersionsOnCache();
-        
+
         return $this;
     }
 
@@ -63,7 +67,7 @@ class Extractor
      */
     public function toRaw()
     {
-        return $this->versions;
+        return $this->getVersions();
     }
 
     /**
@@ -111,12 +115,12 @@ class Extractor
      */
     public function getVersionsDate()
     {
-        $versions = $this->getCachedVersions();
-        if (!isset($versions['date'])) {
-            return \Carbon\Carbon::now();
+        $cachedVersions = $this->getCachedVersions();
+        if (!isset($cachedVersions['date'])) {
+            return $this->date;
         }
 
-        return $versions['date'];
+        return $cachedVersions['date'];
     }
 
     /**
@@ -150,12 +154,12 @@ class Extractor
      */
     private function getVersions()
     {
-        $versions = $this->getCachedVersions();
-        if (!isset($versions['versions'])) {
-            return new Collection();
+        $cachedVersions = $this->getCachedVersions();
+        if (!isset($cachedVersions['versions'])) {
+            return $this->versions;
         }
 
-        return $versions['versions'];
+        return $cachedVersions['versions'];
     }
 
     /**
@@ -165,7 +169,7 @@ class Extractor
      */
     private function getVersion($versionName)
     {
-        $version = $this->getVersions()->filter(function($item) use ($versionName) {
+        $version = $this->versions->filter(function($item) use ($versionName) {
             return ($item->getId() == $versionName);
         })->first();
 
@@ -176,7 +180,7 @@ class Extractor
             $version->setPath($versionName);
             $version->setPatterns($this->getVersionPatterns($versionName));
             $version->setRules($this->getVersionRules($versionName));
-            $this->getVersions()->push($version);
+            $this->versions->push($version);
         }
 
         return $version;
@@ -237,7 +241,6 @@ class Extractor
     private function getVersionPatterns($version)
     {
         $this->checkVersion($version);
-
         return $this->config['routes'][$version]['patterns'];
     }
 
@@ -321,7 +324,7 @@ class Extractor
         }
 
         $this->getCacheRepository()
-            ->forever(self::cacheName, [ 'date' => \Carbon\Carbon::now(), 'versions' => $this->getVersions() ]);
+            ->forever(self::cacheName, [ 'date' => $this->date, 'versions' => $this->versions ]);
 
         return $this;
     }
